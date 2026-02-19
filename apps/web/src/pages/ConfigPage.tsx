@@ -1,28 +1,37 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '@/api/client';
 import { cn } from '@/lib/utils';
-import { ConfigFormBlock, FormRow } from '@/components/ConfigFormBlock';
+import { ConfigOctopus3D } from '@/components/ConfigOctopus3D';
 
-const CONFIG_TABS = [
+const CONFIG_KEYS = [
   { id: 'gateway', label: '网关' },
+  { id: 'models', label: '模型' },
   { id: 'agents', label: '智能体' },
   { id: 'channels', label: '渠道' },
-  { id: 'session', label: '会话' },
+  { id: 'tools', label: '工具' },
+  { id: 'skills', label: '技能' },
+  { id: 'plugins', label: '插件' },
+  { id: 'auth', label: '认证' },
+  { id: 'commands', label: '命令' },
   { id: 'raw', label: '原始 JSON' },
 ] as const;
 
-type ConfigTabId = (typeof CONFIG_TABS)[number]['id'];
+type ConfigKeyId = (typeof CONFIG_KEYS)[number]['id'];
 
 type Config = Record<string, unknown>;
 
 export function ConfigPage() {
-  const [activeTab, setActiveTab] = useState<ConfigTabId>('gateway');
+  const [activeConfigKey, setActiveConfigKey] =
+    useState<ConfigKeyId>('gateway');
   const [config, setConfig] = useState<Config | null>(null);
   const [configPath, setConfigPath] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'ok' | 'err'>('idle');
-  const [rawText, setRawText] = useState('');
+  const [saveStatus, setSaveStatus] = useState<
+    'idle' | 'saving' | 'ok' | 'err'
+  >('idle');
+  const [editingText, setEditingText] = useState('');
+  const [parseError, setParseError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -34,7 +43,6 @@ export function ConfigPage() {
         setConfig(res.config || {});
       } else {
         setConfig(res.config || {});
-        setRawText(JSON.stringify(res.config, null, 2));
       }
       setConfigPath(res.configPath || '');
     } catch (e) {
@@ -49,56 +57,61 @@ export function ConfigPage() {
     load();
   }, [load]);
 
-  const save = useCallback(
-    async (next: Config) => {
-      setSaveStatus('saving');
-      try {
-        await api.config.put(next);
-        setConfig(next);
-        setRawText(JSON.stringify(next, null, 2));
-        setSaveStatus('ok');
-        setTimeout(() => setSaveStatus('idle'), 2000);
-      } catch (e) {
-        setSaveStatus('err');
-        setTimeout(() => setSaveStatus('idle'), 3000);
+  useEffect(() => {
+    if (config) {
+      if (activeConfigKey === 'raw') {
+        setEditingText(JSON.stringify(config, null, 2));
+      } else {
+        const section = config[activeConfigKey];
+        setEditingText(
+          JSON.stringify(section !== undefined ? section : {}, null, 2)
+        );
       }
-    },
-    []
-  );
+      setParseError(null);
+    }
+  }, [config, activeConfigKey]);
 
-  const update = useCallback(
-    (path: string, value: unknown) => {
-      if (!config) return;
-      const parts = path.split('.');
-      const next = JSON.parse(JSON.stringify(config)) as Config;
-      let cur: Record<string, unknown> = next;
-      for (let i = 0; i < parts.length - 1; i++) {
-        const key = parts[i];
-        const existing = cur[key];
-        if (existing != null && typeof existing === 'object' && !Array.isArray(existing)) {
-          cur = existing as Record<string, unknown>;
-        } else {
-          const child: Record<string, unknown> = {};
-          cur[key] = child;
-          cur = child;
+  const save = useCallback(async () => {
+    if (!config) return;
+
+    try {
+      const parsed = JSON.parse(editingText);
+      if (activeConfigKey === 'raw') {
+        if (typeof parsed !== 'object' || Array.isArray(parsed)) {
+          setParseError('配置必须为 JSON 对象');
+          return;
         }
+        setConfig(parsed);
+      } else {
+        const next = { ...config, [activeConfigKey]: parsed };
+        setConfig(next);
       }
-      cur[parts[parts.length - 1]] = value;
-      setConfig(next);
-      setRawText(JSON.stringify(next, null, 2));
-    },
-    [config]
-  );
+      setParseError(null);
+    } catch (e) {
+      setParseError(e instanceof Error ? e.message : 'JSON 解析失败');
+      return;
+    }
 
-  const merge = useCallback(
-    (slice: Record<string, unknown>, rootKey: string) => {
-      if (!config) return;
-      const next = { ...config, [rootKey]: { ...((config[rootKey] as Record<string, unknown>) || {}), ...slice } };
-      setConfig(next);
-      setRawText(JSON.stringify(next, null, 2));
-    },
-    [config]
-  );
+    setSaveStatus('saving');
+    try {
+      const configToSave =
+        activeConfigKey === 'raw'
+          ? JSON.parse(editingText)
+          : { ...config, [activeConfigKey]: JSON.parse(editingText) };
+      await api.config.put(configToSave);
+      setSaveStatus('ok');
+      setTimeout(() => setSaveStatus('idle'), 2000);
+    } catch {
+      setSaveStatus('err');
+      setTimeout(() => setSaveStatus('idle'), 3000);
+    }
+  }, [config, editingText, activeConfigKey]);
+
+  const handlePartClick = useCallback((configKey: string) => {
+    if (CONFIG_KEYS.some((k) => k.id === configKey)) {
+      setActiveConfigKey(configKey as ConfigKeyId);
+    }
+  }, []);
 
   if (loading) return <p className="text-neutral-600">加载配置中…</p>;
   if (error) {
@@ -110,7 +123,8 @@ export function ConfigPage() {
     );
   }
 
-  const cfg = config ?? {};
+  const currentLabel =
+    CONFIG_KEYS.find((k) => k.id === activeConfigKey)?.label || '';
 
   return (
     <div className="space-y-4">
@@ -118,14 +132,16 @@ export function ConfigPage() {
         <p className="text-xs text-neutral-500">配置文件：{configPath}</p>
       )}
       <div className="flex flex-wrap items-center gap-2 border-b border-neutral-200 pb-2">
-        {CONFIG_TABS.map(({ id, label }) => (
+        {CONFIG_KEYS.map(({ id, label }) => (
           <button
             key={id}
             type="button"
-            onClick={() => setActiveTab(id)}
+            onClick={() => setActiveConfigKey(id)}
             className={cn(
               'px-3 py-1.5 rounded-md text-sm',
-              activeTab === id ? 'bg-neutral-200 font-medium' : 'text-neutral-600 hover:bg-neutral-100'
+              activeConfigKey === id
+                ? 'bg-neutral-200 font-medium'
+                : 'text-neutral-600 hover:bg-neutral-100'
             )}
           >
             {label}
@@ -137,332 +153,42 @@ export function ConfigPage() {
           {saveStatus === 'err' && '保存失败'}
         </span>
       </div>
-      <div className="min-h-[200px]">
-        {activeTab === 'gateway' && (
-          <ConfigGateway config={cfg} onUpdate={update} onSave={save} />
-        )}
-        {activeTab === 'agents' && (
-          <ConfigAgents config={cfg} onUpdate={update} onSave={save} />
-        )}
-        {activeTab === 'channels' && (
-          <ConfigChannels config={cfg} onMerge={merge} onSave={save} />
-        )}
-        {activeTab === 'session' && (
-          <ConfigSession config={cfg} onUpdate={update} onSave={save} />
-        )}
-        {activeTab === 'raw' && (
-          <ConfigRaw
-            rawText={rawText}
-            setRawText={setRawText}
-            onSave={save}
-            config={config}
-            setConfig={setConfig}
+      <div className="flex flex-col gap-4 lg:flex-row">
+        <div className="w-full shrink-0 lg:w-[400px] lg:min-w-[400px]">
+          <ConfigOctopus3D
+            onPartClick={handlePartClick}
+            selectedConfigKey={activeConfigKey}
           />
-        )}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="rounded-lg border border-neutral-200 bg-white p-2 shadow-sm">
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-sm font-medium text-neutral-700">
+                {activeConfigKey === 'raw' ? '完整配置' : currentLabel}
+              </span>
+              <button
+                type="button"
+                className="rounded bg-neutral-800 px-3 py-1.5 text-sm text-white hover:bg-neutral-700"
+                onClick={save}
+              >
+                保存
+              </button>
+            </div>
+            {parseError && (
+              <p className="mb-2 text-sm text-red-600">{parseError}</p>
+            )}
+            <textarea
+              className="w-full min-h-[400px] rounded border border-neutral-300 p-2 font-mono text-sm"
+              value={editingText}
+              onChange={(e) => {
+                setEditingText(e.target.value);
+                setParseError(null);
+              }}
+              spellCheck={false}
+            />
+          </div>
+        </div>
       </div>
-    </div>
-  );
-}
-
-function ConfigGateway({
-  config,
-  onUpdate,
-  onSave,
-}: {
-  config: Config;
-  onUpdate: (path: string, value: unknown) => void;
-  onSave: (c: Config) => void;
-}) {
-  const gateway = (config.gateway as Record<string, unknown>) || {};
-  const port = gateway.port ?? 18789;
-  const reload = (gateway.reload as Record<string, unknown>) || {};
-  const reloadMode = (reload.mode as string) || 'hybrid';
-
-  return (
-    <div className="space-y-4">
-      <ConfigFormBlock title="网关">
-        <FormRow label="端口">
-          <input
-            type="number"
-            className="w-24 rounded border border-neutral-300 px-2 py-1 text-sm"
-            value={String(port)}
-            onChange={(e) =>
-              onUpdate('gateway.port', e.target.value === '' ? 18789 : Number(e.target.value))
-            }
-          />
-        </FormRow>
-        <FormRow label="reload 模式">
-          <select
-            className="rounded border border-neutral-300 px-2 py-1 text-sm"
-            value={reloadMode}
-            onChange={(e) =>
-              onUpdate('gateway.reload', { ...reload, mode: e.target.value })
-            }
-          >
-            <option value="hybrid">hybrid</option>
-            <option value="hot">hot</option>
-            <option value="restart">restart</option>
-            <option value="off">off</option>
-          </select>
-        </FormRow>
-      </ConfigFormBlock>
-      <button
-        type="button"
-        className="rounded bg-neutral-800 px-3 py-1.5 text-sm text-white hover:bg-neutral-700"
-        onClick={() => onSave(config)}
-      >
-        保存
-      </button>
-    </div>
-  );
-}
-
-function ConfigAgents({
-  config,
-  onUpdate,
-  onSave,
-}: {
-  config: Config;
-  onUpdate: (path: string, value: unknown) => void;
-  onSave: (c: Config) => void;
-}) {
-  const agents = (config.agents as Record<string, unknown>) || {};
-  const defaults = (agents.defaults as Record<string, unknown>) || {};
-  const workspace = (defaults.workspace as string) ?? '~/.openclaw/workspace';
-  const model = defaults.model as Record<string, unknown> | string | undefined;
-  const primary =
-    typeof model === 'object' && model?.primary != null
-      ? String(model.primary)
-      : typeof model === 'string'
-        ? model
-        : '';
-  const sandbox = (defaults.sandbox as Record<string, unknown>) || {};
-  const sandboxMode = (sandbox.mode as string) ?? 'off';
-
-  return (
-    <div className="space-y-4">
-      <ConfigFormBlock title="智能体默认">
-        <FormRow label="工作区路径">
-          <input
-            type="text"
-            className="min-w-[280px] rounded border border-neutral-300 px-2 py-1 text-sm"
-            value={workspace}
-            onChange={(e) => onUpdate('agents.defaults.workspace', e.target.value)}
-          />
-        </FormRow>
-        <FormRow label="主模型">
-          <input
-            type="text"
-            className="min-w-[280px] rounded border border-neutral-300 px-2 py-1 text-sm"
-            placeholder="anthropic/claude-sonnet-4-5"
-            value={primary}
-            onChange={(e) => {
-              const m = typeof model === 'object' ? { ...model, primary: e.target.value } : { primary: e.target.value };
-              onUpdate('agents.defaults.model', m);
-            }}
-          />
-        </FormRow>
-        <FormRow label="沙箱模式">
-          <select
-            className="rounded border border-neutral-300 px-2 py-1 text-sm"
-            value={sandboxMode}
-            onChange={(e) =>
-              onUpdate('agents.defaults.sandbox', { ...sandbox, mode: e.target.value })
-            }
-          >
-            <option value="off">off</option>
-            <option value="non-main">non-main</option>
-            <option value="all">all</option>
-          </select>
-        </FormRow>
-      </ConfigFormBlock>
-      <button
-        type="button"
-        className="rounded bg-neutral-800 px-3 py-1.5 text-sm text-white hover:bg-neutral-700"
-        onClick={() => onSave(config)}
-      >
-        保存
-      </button>
-    </div>
-  );
-}
-
-function ConfigChannels({
-  config,
-  onMerge,
-  onSave,
-}: {
-  config: Config;
-  onMerge: (slice: Record<string, unknown>, root: string) => void;
-  onSave: (c: Config) => void;
-}) {
-  const channels = (config.channels as Record<string, unknown>) || {};
-  const whatsapp = (channels.whatsapp as Record<string, unknown>) || {};
-  const telegram = (channels.telegram as Record<string, unknown>) || {};
-  const allowFromWhatsApp = Array.isArray(whatsapp.allowFrom)
-    ? (whatsapp.allowFrom as string[]).join(', ')
-    : '';
-  const allowFromTelegram = Array.isArray(telegram.allowFrom)
-    ? (telegram.allowFrom as string[]).join(', ')
-    : '';
-
-  return (
-    <div className="space-y-4">
-      <ConfigFormBlock title="WhatsApp">
-        <FormRow label="allowFrom">
-          <input
-            type="text"
-            className="min-w-[280px] rounded border border-neutral-300 px-2 py-1 text-sm"
-            placeholder="+15555550123 或 *"
-            value={allowFromWhatsApp}
-            onChange={(e) =>
-              onMerge(
-                {
-                  ...channels,
-                  whatsapp: {
-                    ...whatsapp,
-                    allowFrom: e.target.value ? e.target.value.split(/[\s,]+/).filter(Boolean) : [],
-                  },
-                },
-                'channels'
-              )
-            }
-          />
-        </FormRow>
-      </ConfigFormBlock>
-      <ConfigFormBlock title="Telegram">
-        <FormRow label="allowFrom">
-          <input
-            type="text"
-            className="min-w-[280px] rounded border border-neutral-300 px-2 py-1 text-sm"
-            placeholder="tg:123 或 *"
-            value={allowFromTelegram}
-            onChange={(e) =>
-              onMerge(
-                {
-                  ...channels,
-                  telegram: {
-                    ...telegram,
-                    allowFrom: e.target.value ? e.target.value.split(/[\s,]+/).filter(Boolean) : [],
-                  },
-                },
-                'channels'
-              )
-            }
-          />
-        </FormRow>
-      </ConfigFormBlock>
-      <button
-        type="button"
-        className="rounded bg-neutral-800 px-3 py-1.5 text-sm text-white hover:bg-neutral-700"
-        onClick={() => onSave(config)}
-      >
-        保存
-      </button>
-    </div>
-  );
-}
-
-function ConfigSession({
-  config,
-  onUpdate,
-  onSave,
-}: {
-  config: Config;
-  onUpdate: (path: string, value: unknown) => void;
-  onSave: (c: Config) => void;
-}) {
-  const session = (config.session as Record<string, unknown>) || {};
-  const dmScope = (session.dmScope as string) ?? 'per-channel-peer';
-  const reset = (session.reset as Record<string, unknown>) || {};
-  const resetMode = (reset.mode as string) ?? '';
-
-  return (
-    <div className="space-y-4">
-      <ConfigFormBlock title="会话">
-        <FormRow label="dmScope">
-          <select
-            className="rounded border border-neutral-300 px-2 py-1 text-sm"
-            value={dmScope}
-            onChange={(e) => onUpdate('session.dmScope', e.target.value)}
-          >
-            <option value="main">main</option>
-            <option value="per-peer">per-peer</option>
-            <option value="per-channel-peer">per-channel-peer</option>
-            <option value="per-account-channel-peer">per-account-channel-peer</option>
-          </select>
-        </FormRow>
-        <FormRow label="reset.mode">
-          <input
-            type="text"
-            className="min-w-[120px] rounded border border-neutral-300 px-2 py-1 text-sm"
-            placeholder="daily / idleMinutes"
-            value={resetMode}
-            onChange={(e) =>
-              onUpdate('session.reset', { ...reset, mode: e.target.value })
-            }
-          />
-        </FormRow>
-      </ConfigFormBlock>
-      <button
-        type="button"
-        className="rounded bg-neutral-800 px-3 py-1.5 text-sm text-white hover:bg-neutral-700"
-        onClick={() => onSave(config)}
-      >
-        保存
-      </button>
-    </div>
-  );
-}
-
-function ConfigRaw({
-  rawText,
-  setRawText,
-  onSave,
-  setConfig,
-}: {
-  rawText: string;
-  setRawText: (s: string) => void;
-  onSave: (c: Config) => void;
-  config: Config | null;
-  setConfig: (c: Config) => void;
-}) {
-  const [parseError, setParseError] = useState<string | null>(null);
-
-  const handleSave = () => {
-    try {
-      const parsed = JSON.parse(rawText) as Config;
-      if (typeof parsed !== 'object' || Array.isArray(parsed)) {
-        setParseError('配置必须为 JSON 对象');
-        return;
-      }
-      setParseError(null);
-      setConfig(parsed);
-      onSave(parsed);
-    } catch (e) {
-      setParseError(e instanceof Error ? e.message : 'JSON 解析失败');
-    }
-  };
-
-  return (
-    <div className="space-y-2">
-      <p className="text-xs text-neutral-500">编辑完整 JSON，保存前会校验格式。</p>
-      {parseError && (
-        <p className="text-sm text-red-600">{parseError}</p>
-      )}
-      <textarea
-        className="w-full min-h-[360px] rounded border border-neutral-300 p-2 font-mono text-sm"
-        value={rawText}
-        onChange={(e) => setRawText(e.target.value)}
-        spellCheck={false}
-      />
-      <button
-        type="button"
-        className="rounded bg-neutral-800 px-3 py-1.5 text-sm text-white hover:bg-neutral-700"
-        onClick={handleSave}
-      >
-        保存
-      </button>
     </div>
   );
 }
