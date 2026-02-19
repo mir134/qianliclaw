@@ -1,6 +1,7 @@
 import path from 'path';
 import fs from 'fs';
 import { getWorkspacePath } from './configService.js';
+import { readSettings } from './settingsService.js';
 
 export const WORKSPACE_FILES = [
   'USER.md',
@@ -18,6 +19,11 @@ function isAllowedName(name: string): name is WorkspaceFileName {
 }
 
 export function getWorkspaceDir(): string | null {
+  const settings = readSettings();
+  if (settings.workspacePathOverride) {
+    const resolved = path.resolve(settings.workspacePathOverride);
+    return resolved;
+  }
   return getWorkspacePath();
 }
 
@@ -48,16 +54,21 @@ export function listWorkspaceFiles(): {
   return { workspacePath, files };
 }
 
-export function readWorkspaceFile(
-  name: string
-): { content: string; error?: string } {
+export function readWorkspaceFile(name: string): {
+  content: string;
+  error?: string;
+} {
   if (!isAllowedName(name)) {
     return { content: '', error: 'Invalid file name' };
   }
   const workspacePath = getWorkspaceDir();
   if (!workspacePath) return { content: '', error: 'No workspace path' };
   const fullPath = path.join(workspacePath, name);
-  if (path.relative(workspacePath, path.resolve(workspacePath, name)).startsWith('..')) {
+  if (
+    path
+      .relative(workspacePath, path.resolve(workspacePath, name))
+      .startsWith('..')
+  ) {
     return { content: '', error: 'Invalid path' };
   }
   try {

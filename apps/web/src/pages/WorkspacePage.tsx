@@ -17,10 +17,17 @@ export function WorkspacePage() {
   const [files, setFiles] = useState<{ name: string; exists: boolean }[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedFile, setSelectedFile] = useState<string>(WORKSPACE_FILE_NAMES[0]);
+  const [selectedFile, setSelectedFile] = useState<string>(
+    WORKSPACE_FILE_NAMES[0]
+  );
   const [content, setContent] = useState('');
   const [contentLoading, setContentLoading] = useState(false);
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'ok' | 'err'>('idle');
+  const [saveStatus, setSaveStatus] = useState<
+    'idle' | 'saving' | 'ok' | 'err'
+  >('idle');
+  const [customPath, setCustomPath] = useState<string>('');
+  const [isCustomPath, setIsCustomPath] = useState(false);
+  const [savingSettings, setSavingSettings] = useState(false);
 
   const loadList = useCallback(async () => {
     setLoading(true);
@@ -38,9 +45,20 @@ export function WorkspacePage() {
     }
   }, []);
 
+  const loadSettings = useCallback(async () => {
+    try {
+      const settings = await api.settings.get();
+      if (settings.workspacePathOverride) {
+        setCustomPath(settings.workspacePathOverride);
+        setIsCustomPath(true);
+      }
+    } catch {}
+  }, []);
+
   useEffect(() => {
     loadList();
-  }, [loadList]);
+    loadSettings();
+  }, [loadList, loadSettings]);
 
   const loadFile = useCallback(async (name: string) => {
     setContentLoading(true);
@@ -75,6 +93,34 @@ export function WorkspacePage() {
     setSelectedFile(fileName);
   }, []);
 
+  const handleApplyCustomPath = useCallback(async () => {
+    setSavingSettings(true);
+    try {
+      const pathToSet = customPath.trim() || null;
+      await api.settings.put({ workspacePathOverride: pathToSet });
+      setIsCustomPath(!!pathToSet);
+      loadList();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setSavingSettings(false);
+    }
+  }, [customPath, loadList]);
+
+  const handleResetPath = useCallback(async () => {
+    setSavingSettings(true);
+    try {
+      await api.settings.put({ workspacePathOverride: null });
+      setCustomPath('');
+      setIsCustomPath(false);
+      loadList();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setSavingSettings(false);
+    }
+  }, [loadList]);
+
   if (loading) return <p className="text-neutral-600">加载工作区列表…</p>;
 
   return (
@@ -82,6 +128,34 @@ export function WorkspacePage() {
       {workspacePath && (
         <p className="text-xs text-neutral-500">工作区：{workspacePath}</p>
       )}
+      <div className="flex flex-wrap items-center gap-2">
+        <input
+          type="text"
+          value={customPath}
+          onChange={(e) => setCustomPath(e.target.value)}
+          placeholder="自定义工作区路径..."
+          className="flex-1 min-w-[200px] rounded border border-neutral-300 px-3 py-1.5 text-sm"
+          disabled={savingSettings}
+        />
+        <button
+          type="button"
+          onClick={handleApplyCustomPath}
+          disabled={savingSettings}
+          className="rounded bg-neutral-800 px-3 py-1.5 text-sm text-white hover:bg-neutral-700 disabled:opacity-50"
+        >
+          {savingSettings ? '应用中…' : '应用'}
+        </button>
+        {isCustomPath && (
+          <button
+            type="button"
+            onClick={handleResetPath}
+            disabled={savingSettings}
+            className="rounded border border-neutral-300 px-3 py-1.5 text-sm text-neutral-600 hover:bg-neutral-100 disabled:opacity-50"
+          >
+            重置
+          </button>
+        )}
+      </div>
       {error && (
         <div className="rounded border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
           {error}
@@ -100,7 +174,8 @@ export function WorkspacePage() {
         <div className="min-w-0 flex-1 space-y-2">
           <div className="flex flex-wrap items-center gap-2 border-b border-neutral-200 pb-2">
             {WORKSPACE_FILE_NAMES.map((name) => {
-              const exists = files.find((f) => f.name === name)?.exists ?? false;
+              const exists =
+                files.find((f) => f.name === name)?.exists ?? false;
               return (
                 <button
                   key={name}

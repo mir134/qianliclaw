@@ -3,6 +3,7 @@ import fs from 'fs';
 
 export interface AppSettings {
   configRootOverride?: string | null;
+  workspacePathOverride?: string | null;
   openclawCliPath?: string | null;
   gatewayUrl?: string | null;
 }
