@@ -384,10 +384,13 @@ export function ConfigPage() {
     }
   }, []);
 
-  if (loading) return <p className="text-neutral-600">加载配置中…</p>;
+  if (loading)
+    return (
+      <p className="text-neutral-600 dark:text-neutral-400">加载配置中…</p>
+    );
   if (error) {
     return (
-      <div className="rounded border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+      <div className="rounded border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/30 p-3 text-sm text-amber-800 dark:text-amber-200">
         <p>配置路径：{configPath || '—'}</p>
         <p>错误：{error}</p>
       </div>
@@ -401,9 +404,11 @@ export function ConfigPage() {
   return (
     <div className="space-y-4">
       {configPath && (
-        <p className="text-xs text-neutral-500">配置文件：{configPath}</p>
+        <p className="text-xs text-neutral-500 dark:text-neutral-400">
+          配置文件：{configPath}
+        </p>
       )}
-      <div className="flex flex-wrap items-center gap-2 border-b border-neutral-200 pb-2">
+      <div className="flex flex-wrap items-center gap-2 border-b border-neutral-200 dark:border-neutral-700 pb-2">
         {CONFIG_KEYS.map(({ id, label }) => (
           <button
             key={id}
@@ -412,14 +417,14 @@ export function ConfigPage() {
             className={cn(
               'px-3 py-1.5 rounded-md text-sm',
               activeConfigKey === id
-                ? 'bg-neutral-200 font-medium'
-                : 'text-neutral-600 hover:bg-neutral-100'
+                ? 'bg-neutral-200 dark:bg-neutral-700 font-medium'
+                : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-700'
             )}
           >
             {label}
           </button>
         ))}
-        <span className="ml-auto text-sm text-neutral-500">
+        <span className="ml-auto text-sm text-neutral-500 dark:text-neutral-400">
           {saveStatus === 'saving' && '保存中…'}
           {saveStatus === 'ok' && '已保存'}
           {saveStatus === 'err' && '保存失败'}
@@ -433,24 +438,26 @@ export function ConfigPage() {
           />
         </div>
         <div className="min-w-0 flex-1 grid lg:grid-cols-2 gap-4">
-          <div className="rounded-lg border border-neutral-200 bg-white p-2 shadow-sm">
+          <div className="rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 p-2 shadow-sm">
             <div className="mb-2 flex items-center justify-between">
-              <span className="text-sm font-medium text-neutral-700">
+              <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
                 {activeConfigKey === 'raw' ? '完整配置' : currentLabel} JSON
               </span>
               <button
                 type="button"
-                className="rounded bg-neutral-800 px-3 py-1.5 text-sm text-white hover:bg-neutral-700"
+                className="rounded bg-neutral-800 dark:bg-neutral-600 px-3 py-1.5 text-sm text-white hover:bg-neutral-700 dark:hover:bg-neutral-500"
                 onClick={save}
               >
                 保存
               </button>
             </div>
             {parseError && (
-              <p className="mb-2 text-sm text-red-600">{parseError}</p>
+              <p className="mb-2 text-sm text-red-600 dark:text-red-400">
+                {parseError}
+              </p>
             )}
             <textarea
-              className="w-full h-[400px] resize-none rounded border border-neutral-300 p-2 font-mono text-sm"
+              className="w-full h-[400px] resize-none rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900 p-2 font-mono text-sm dark:text-neutral-100"
               value={editingText}
               onChange={(e) => {
                 setEditingText(e.target.value);
@@ -459,17 +466,17 @@ export function ConfigPage() {
               spellCheck={false}
             />
           </div>
-          <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3 shadow-sm flex flex-col h-[476px]">
-            <h3 className="mb-2 text-sm font-semibold text-neutral-700">
+          <div className="rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/50 p-3 shadow-sm flex flex-col h-[476px]">
+            <h3 className="mb-2 text-sm font-semibold text-neutral-700 dark:text-neutral-300">
               {currentLabel} 配置说明
             </h3>
-            <p className="mb-3 text-sm text-neutral-600 leading-relaxed">
+            <p className="mb-3 text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
               {currentDocs.description}
             </p>
-            <div className="mb-2 text-xs font-medium text-neutral-500 uppercase">
+            <div className="mb-2 text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase">
               示例配置
             </div>
-            <pre className="flex-1 overflow-auto rounded border border-neutral-300 bg-white p-2 text-xs font-mono text-neutral-700 leading-relaxed">
+            <pre className="flex-1 overflow-auto rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900 p-2 text-xs font-mono text-neutral-700 dark:text-neutral-300 leading-relaxed">
               {currentDocs.example}
             </pre>
           </div>

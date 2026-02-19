@@ -20,7 +20,8 @@ export function StatusPage() {
       setConfigReadOk(s.configReadOk);
       setConfigError(s.configError ?? null);
       setWorkspacePath(s.workspacePath);
-      const cli = (s.settings as { openclawCliPath?: string | null })?.openclawCliPath;
+      const cli = (s.settings as { openclawCliPath?: string | null })
+        ?.openclawCliPath;
       setOpenclawCliPath(cli ?? null);
     } catch {
       setConfigPath('');
@@ -50,54 +51,67 @@ export function StatusPage() {
     }
   }, [openclawCliPath]);
 
-  if (loading) return <p className="text-neutral-600">加载状态中…</p>;
+  if (loading)
+    return (
+      <p className="text-neutral-600 dark:text-neutral-400">加载状态中…</p>
+    );
 
   return (
     <div className="space-y-6">
-      <div className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm">
-        <h3 className="mb-3 text-sm font-medium text-neutral-700">配置与工作区</h3>
+      <div className="rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 p-4 shadow-sm">
+        <h3 className="mb-3 text-sm font-medium text-neutral-700 dark:text-neutral-300">
+          配置与工作区
+        </h3>
         <dl className="space-y-2 text-sm">
           <div>
-            <dt className="text-neutral-500">配置文件</dt>
+            <dt className="text-neutral-500 dark:text-neutral-400">配置文件</dt>
             <dd className="font-mono">{configPath || '—'}</dd>
           </div>
           <div>
-            <dt className="text-neutral-500">配置读取</dt>
+            <dt className="text-neutral-500 dark:text-neutral-400">配置读取</dt>
             <dd>
               {configReadOk ? (
-                <span className="text-green-600">正常</span>
+                <span className="text-green-600 dark:text-green-400">正常</span>
               ) : (
-                <span className="text-amber-600">{configError || '失败'}</span>
+                <span className="text-amber-600 dark:text-amber-400">
+                  {configError || '失败'}
+                </span>
               )}
             </dd>
           </div>
           <div>
-            <dt className="text-neutral-500">工作区路径</dt>
+            <dt className="text-neutral-500 dark:text-neutral-400">
+              工作区路径
+            </dt>
             <dd className="font-mono">{workspacePath || '—'}</dd>
           </div>
         </dl>
       </div>
 
-      <div className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm">
-        <h3 className="mb-3 text-sm font-medium text-neutral-700">OpenClaw 健康检查</h3>
-        <p className="mb-2 text-xs text-neutral-500">
+      <div className="rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 p-4 shadow-sm">
+        <h3 className="mb-3 text-sm font-medium text-neutral-700 dark:text-neutral-300">
+          OpenClaw 健康检查
+        </h3>
+        <p className="mb-2 text-xs text-neutral-500 dark:text-neutral-400">
           需已安装 OpenClaw CLI；可在设置中填写可执行路径。
         </p>
         <button
           type="button"
-          className="rounded bg-neutral-800 px-3 py-1.5 text-sm text-white hover:bg-neutral-700 disabled:opacity-50"
+          className="rounded bg-neutral-800 dark:bg-neutral-600 px-3 py-1.5 text-sm text-white hover:bg-neutral-700 dark:hover:bg-neutral-500 disabled:opacity-50"
           onClick={runHealth}
           disabled={healthLoading}
         >
           {healthLoading ? '执行中…' : '执行 openclaw health'}
         </button>
         {healthOutput != null && (
-          <pre className="mt-3 overflow-auto rounded border border-neutral-200 bg-neutral-50 p-3 text-xs">
+          <pre className="mt-3 overflow-auto rounded border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900 p-3 text-xs">
             {healthOutput}
           </pre>
         )}
         {healthError != null && (
-          <p className="mt-2 text-sm text-red-600">{healthError}</p>
+          <p className="mt-2 text-sm text-red-600 dark:text-red-400">
+            {healthError}
+          </p>
         )}
       </div>
     </div>

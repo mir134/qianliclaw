@@ -121,12 +121,17 @@ export function WorkspacePage() {
     }
   }, [loadList]);
 
-  if (loading) return <p className="text-neutral-600">加载工作区列表…</p>;
+  if (loading)
+    return (
+      <p className="text-neutral-600 dark:text-neutral-400">加载工作区列表…</p>
+    );
 
   return (
     <div className="flex flex-col gap-4">
       {workspacePath && (
-        <p className="text-xs text-neutral-500">工作区：{workspacePath}</p>
+        <p className="text-xs text-neutral-500 dark:text-neutral-400">
+          工作区：{workspacePath}
+        </p>
       )}
       <div className="flex flex-wrap items-center gap-2">
         <input
@@ -134,14 +139,14 @@ export function WorkspacePage() {
           value={customPath}
           onChange={(e) => setCustomPath(e.target.value)}
           placeholder="自定义工作区路径..."
-          className="flex-1 min-w-[200px] rounded border border-neutral-300 px-3 py-1.5 text-sm"
+          className="flex-1 min-w-[200px] rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 px-3 py-1.5 text-sm dark:text-neutral-100"
           disabled={savingSettings}
         />
         <button
           type="button"
           onClick={handleApplyCustomPath}
           disabled={savingSettings}
-          className="rounded bg-neutral-800 px-3 py-1.5 text-sm text-white hover:bg-neutral-700 disabled:opacity-50"
+          className="rounded bg-neutral-800 dark:bg-neutral-600 px-3 py-1.515 text-sm text-white hover:bg-neutral-700 dark:hover:bg-neutral-500 disabled:opacity-50"
         >
           {savingSettings ? '应用中…' : '应用'}
         </button>
@@ -150,14 +155,14 @@ export function WorkspacePage() {
             type="button"
             onClick={handleResetPath}
             disabled={savingSettings}
-            className="rounded border border-neutral-300 px-3 py-1.5 text-sm text-neutral-600 hover:bg-neutral-100 disabled:opacity-50"
+            className="rounded border border-neutral-300 dark:border-neutral-600 px-3 py-1.5 text-sm text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-700 disabled:opacity-50"
           >
             重置
           </button>
         )}
       </div>
       {error && (
-        <div className="rounded border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+        <div className="rounded border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/30 p-3 text-sm text-amber-800 dark:text-amber-200">
           {error}
         </div>
       )}
@@ -172,7 +177,7 @@ export function WorkspacePage() {
         </div>
 
         <div className="min-w-0 flex-1 space-y-2">
-          <div className="flex flex-wrap items-center gap-2 border-b border-neutral-200 pb-2">
+          <div className="flex flex-wrap items-center gap-2 border-b border-neutral-200 dark:border-neutral-700 pb-2">
             {WORKSPACE_FILE_NAMES.map((name) => {
               const exists =
                 files.find((f) => f.name === name)?.exists ?? false;
@@ -184,43 +189,46 @@ export function WorkspacePage() {
                   className={cn(
                     'px-3 py-1.5 rounded-md text-sm',
                     selectedFile === name
-                      ? 'bg-neutral-200 font-medium'
-                      : 'text-neutral-600 hover:bg-neutral-100'
+                      ? 'bg-neutral-200 dark:bg-neutral-700 font-medium'
+                      : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-700'
                   )}
                 >
                   {name}
                   {exists && (
-                    <span className="ml-1 text-green-600" title="文件已存在">
+                    <span
+                      className="ml-1 text-green-600 dark:text-green-400"
+                      title="文件已存在"
+                    >
                       ●
                     </span>
                   )}
                 </button>
               );
             })}
-            <span className="ml-auto text-sm text-neutral-500">
+            <span className="ml-auto text-sm text-neutral-500 dark:text-neutral-400">
               {saveStatus === 'saving' && '保存中…'}
               {saveStatus === 'ok' && '已保存'}
               {saveStatus === 'err' && '保存失败'}
             </span>
           </div>
-          <div className="rounded-lg border border-neutral-200 bg-white p-2 shadow-sm">
+          <div className="rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 p-2 shadow-sm">
             <div className="mb-2 flex items-center justify-between">
-              <span className="text-sm font-medium text-neutral-700">
+              <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
                 {selectedFile}
               </span>
               <button
                 type="button"
-                className="rounded bg-neutral-800 px-3 py-1.5 text-sm text-white hover:bg-neutral-700"
+                className="rounded bg-neutral-800 dark:bg-neutral-600 px-3 py-1.5 text-sm text-white hover:bg-neutral-700 dark:hover:bg-neutral-500"
                 onClick={save}
               >
                 保存
               </button>
             </div>
             {contentLoading ? (
-              <p className="text-neutral-500">加载中…</p>
+              <p className="text-neutral-500 dark:text-neutral-400">加载中…</p>
             ) : (
               <textarea
-                className="w-full min-h-[360px] rounded border border-neutral-300 p-2 font-mono text-sm"
+                className="w-full min-h-[360px] rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900 p-2 font-mono text-sm dark:text-neutral-100"
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 spellCheck={false}
