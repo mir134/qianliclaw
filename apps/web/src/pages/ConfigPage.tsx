@@ -407,12 +407,21 @@ export function ConfigPage() {
 
   if (loading)
     return (
-      <p className="text-neutral-600 dark:text-neutral-400">加载配置中…</p>
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-neutral-600 dark:text-neutral-400">加载配置中…</p>
+        </div>
+      </div>
     );
   if (error) {
     return (
-      <div className="rounded border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/30 p-3 text-sm text-amber-800 dark:text-amber-200">
-        <p>配置路径：{configPath || '—'}</p>
+      <div className="rounded-2xl border-2 border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/30 p-6 text-sm text-amber-800 dark:text-amber-200 shadow-lg">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-2xl">⚠️</span>
+          <span className="font-semibold">配置错误</span>
+        </div>
+        <p className="mb-2">配置路径：{configPath || '—'}</p>
         <p>错误：{error}</p>
       </div>
     );
@@ -423,45 +432,77 @@ export function ConfigPage() {
   const currentDocs = CONFIG_DOCS[activeConfigKey];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {configPath && (
-        <p className="text-xs text-neutral-500 dark:text-neutral-400">
-          配置文件：{configPath}
-        </p>
+        <div className="flex items-center gap-2 px-4 py-2 bg-white/50 dark:bg-slate-800/50 rounded-lg border border-neutral-200 dark:border-neutral-700">
+          <span className="text-xs text-neutral-500 dark:text-neutral-400">
+            配置文件：
+          </span>
+          <span className="text-xs font-mono text-neutral-700 dark:text-neutral-300">
+            {configPath}
+          </span>
+        </div>
       )}
-      <div className="flex flex-wrap items-center gap-2 border-b border-neutral-200 dark:border-neutral-700 pb-2">
-        {CONFIG_KEYS.map(({ id, label }) => (
-          <button
-            key={id}
-            type="button"
-            onClick={() => setActiveConfigKey(id)}
-            className={cn(
-              'px-3 py-1.5 rounded-md text-sm',
-              activeConfigKey === id
-                ? 'bg-neutral-200 dark:bg-neutral-700 font-medium'
-                : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-700'
+      <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm rounded-2xl p-4 shadow-lg border border-white/20 dark:border-white/10">
+        <div className="flex flex-wrap items-center gap-2 border-b border-neutral-200 dark:border-neutral-700 pb-4">
+          <div className="flex flex-wrap items-center gap-2 flex-1">
+            {CONFIG_KEYS.map(({ id, label }) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setActiveConfigKey(id)}
+                className={cn(
+                  'px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 relative overflow-hidden group',
+                  activeConfigKey === id
+                    ? 'bg-gradient-to-r from-primary-700 to-primary-800 text-white shadow-lg shadow-primary-500/30 hover:from-primary-700 hover:to-primary-800'
+                    : 'text-neutral-600 dark:text-neutral-400 hover:bg-white/80 dark:hover:bg-slate-700/50 hover:text-primary-700 dark:hover:text-primary-400'
+                )}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-2 ml-4">
+            {saveStatus === 'saving' && (
+              <div className="flex items-center gap-2 text-sm text-primary-600 dark:text-primary-400">
+                <div className="w-4 h-4 border-2 border-primary-200 border-t-primary-600 rounded-full animate-spin" />
+                保存中…
+              </div>
             )}
-          >
-            {label}
-          </button>
-        ))}
-        <span className="ml-auto text-sm text-neutral-500 dark:text-neutral-400">
-          {saveStatus === 'saving' && '保存中…'}
-          {saveStatus === 'ok' && '已保存'}
-          {saveStatus === 'err' && '保存失败'}
-        </span>
+            {saveStatus === 'ok' && (
+              <span className="flex items-center gap-1.5 text-sm text-green-600 dark:text-green-400">
+                <span className="w-2 h-2 bg-green-400 rounded-full" />
+                已保存
+              </span>
+            )}
+            {saveStatus === 'err' && (
+              <span className="flex items-center gap-1.5 text-sm text-red-600 dark:text-red-400">
+                <span className="text-lg">✗</span>
+                保存失败
+              </span>
+            )}
+          </div>
+        </div>
       </div>
-      <div className="flex flex-col gap-4 lg:flex-row">
-        <div className="w-full shrink-0 lg:w-[400px] lg:min-w-[400px]">
-          <ConfigOctopus3D
-            onPartClick={handlePartClick}
-            selectedConfigKey={activeConfigKey}
-          />
+      <div className="flex flex-col gap-6 lg:flex-row">
+        <div className="w-full shrink-0 lg:w-[450px] lg:min-w-[450px]">
+          <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/20 dark:border-white/10 h-fit">
+            <h2 className="text-lg font-semibold mb-4 text-neutral-800 dark:text-neutral-200">
+              3D 章鱼模型
+            </h2>
+            <ConfigOctopus3D
+              onPartClick={handlePartClick}
+              selectedConfigKey={activeConfigKey}
+            />
+          </div>
         </div>
         <div className="min-w-0 flex-1 grid lg:grid-cols-2 gap-4">
-          <div className="rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 p-2 shadow-sm">
-            <div className="mb-2 flex items-center justify-between gap-2">
-              <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+          <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm rounded-2xl p-4 shadow-lg border border-white/20 dark:border-white/10">
+            <div className="mb-4 flex items-center justify-between gap-2">
+              <span className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 flex items-center gap-2">
+                <span className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center text-white text-xs font-bold">
+                  {currentLabel.charAt(0)}
+                </span>
                 {activeConfigKey === 'raw' ? '完整配置' : currentLabel} JSON
               </span>
               <input
@@ -469,23 +510,22 @@ export function ConfigPage() {
                 placeholder="搜索字段或值..."
                 value={searchText}
                 onChange={(e) => setSearchText(e.target.value)}
-                className="rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900 px-2 py-1 text-sm text-neutral-700 dark:text-neutral-300 placeholder:text-neutral-400 dark:placeholder:text-neutral-500"
+                className="rounded-xl border-2 border-neutral-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-sm text-neutral-700 dark:text-neutral-300 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:border-primary-500 dark:focus:border-primary-400 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-800 transition-all duration-200"
               />
               <button
                 type="button"
-                className="rounded bg-neutral-800 dark:bg-neutral-600 px-3 py-1.5 text-sm text-white hover:bg-neutral-700 dark:hover:bg-neutral-500 shrink-0"
+                className="px-4 py-1.5 rounded-xl bg-gradient-to-r from-primary-700 to-primary-800 text-white font-medium hover:from-primary-800 hover:to-primary-900 shadow-lg shadow-primary-500/30 hover:shadow-xl transition-all duration-200 shrink-0"
                 onClick={save}
               >
                 保存
               </button>
             </div>
             {parseError && (
-              <p className="mb-2 text-sm text-red-600 dark:text-red-400">
+              <div className="mb-3 p-3 rounded-lg bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-sm text-red-600 dark:text-red-400">
                 {parseError}
-              </p>
+              </div>
             )}
-            <div className="h-[400px] overflow-auto">
-              {theme}
+            <div className="h-[450px] overflow-auto rounded-xl bg-white/50 dark:bg-slate-900/50 border border-neutral-200 dark:border-slate-700 p-2">
               <JsonEditor
                 data={jsonData}
                 onUpdate={({ newData }) => {
@@ -500,17 +540,23 @@ export function ConfigPage() {
               />
             </div>
           </div>
-          <div className="rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/50 p-3 shadow-sm flex flex-col h-[476px]">
-            <h3 className="mb-2 text-sm font-semibold text-neutral-700 dark:text-neutral-300">
-              {currentLabel} 配置说明
-            </h3>
-            <p className="mb-3 text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
+          <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm rounded-2xl p-4 shadow-lg border border-white/20 dark:border-white/10 flex flex-col h-[550px]">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center text-white text-xs font-bold">
+                {currentLabel.charAt(0)}
+              </span>
+              <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300">
+                {currentLabel} 配置说明
+              </h3>
+            </div>
+            <p className="mb-4 text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
               {currentDocs.description}
             </p>
-            <div className="mb-2 text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase">
+            <div className="mb-2 text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider flex items-center gap-2">
+              <span className="w-1 h-4 bg-gradient-to-b from-primary-500 to-primary-600 rounded-full" />
               示例配置
             </div>
-            <pre className="flex-1 overflow-auto rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900 p-2 text-xs font-mono text-neutral-700 dark:text-neutral-300 leading-relaxed">
+            <pre className="flex-1 overflow-auto rounded-xl border-2 border-neutral-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 text-xs font-mono text-neutral-700 dark:text-neutral-300 leading-relaxed">
               {currentDocs.example}
             </pre>
           </div>
