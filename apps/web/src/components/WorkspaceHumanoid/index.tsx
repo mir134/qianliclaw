@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls } from '@react-three/drei';
+import { OrbitControls, Environment, ContactShadows } from '@react-three/drei';
 import { BodyPart } from './BodyPart';
 import { GlbHumanoid } from './GlbHumanoid';
 import {
@@ -72,10 +72,16 @@ function HumanoidScene({
 
   return (
     <>
-      <ambientLight intensity={0.55} />
-      <directionalLight position={[4, 6, 4]} intensity={1.1} castShadow />
-      <directionalLight position={[-3, 3, 2]} intensity={0.35} />
-      <pointLight position={[0, 1.5, 1.5]} intensity={0.4} distance={4} />
+      <ambientLight intensity={0.65} />
+      <directionalLight position={[4, 6, 4]} intensity={1.3} castShadow />
+      <directionalLight position={[-3, 4, 2]} intensity={0.5} />
+      <pointLight position={[0, 1.5, 1.5]} intensity={0.5} distance={5} />
+      <pointLight
+        position={[2, 0.8, -2]}
+        intensity={0.3}
+        distance={4}
+        color="#5eead4"
+      />
       <OrbitControls
         enablePan={false}
         minPolarAngle={0.3}
@@ -130,14 +136,47 @@ function SceneContent({
   if (glbUrl.trim()) {
     return (
       <>
-        <ambientLight intensity={0.55} />
-        <directionalLight position={[4, 6, 4]} intensity={1.1} />
-        <directionalLight position={[-3, 3, 2]} intensity={0.35} />
-        <pointLight position={[0, 1.5, 1.5]} intensity={0.4} distance={4} />
+        <Environment preset="city" />
+        <ambientLight intensity={0.5} />
+        <directionalLight position={[5, 8, 5]} intensity={1.2} />
+        <directionalLight position={[-4, 5, 3]} intensity={0.5} />
+        <pointLight position={[0, 2, 2]} intensity={0.4} distance={6} />
+        <pointLight
+          position={[2.5, 1, -2.5]}
+          intensity={0.3}
+          distance={5}
+          color="#5eead4"
+        />
+        <pointLight
+          position={[-2.5, 1, -2.5]}
+          intensity={0.2}
+          distance={4}
+          color="#60a5fa"
+        />
+        <ContactShadows
+          position={[0, -0.1, 0]}
+          rotation={[0, 0, 0]}
+          scale={5}
+          blur={2.5}
+          far={3}
+          opacity={0.4}
+        />
         <OrbitControls
           enablePan={false}
-          minPolarAngle={0.3}
-          maxPolarAngle={Math.PI * 0.6}
+          minPolarAngle={0.2}
+          maxPolarAngle={Math.PI * 0.7}
+          target={[0, -0.1, 0]}
+        />
+        <pointLight
+          position={[-2.5, 1, -2.5]}
+          intensity={0.3}
+          distance={4}
+          color="#60a5fa"
+        />
+        <OrbitControls
+          enablePan={false}
+          minPolarAngle={0.2}
+          maxPolarAngle={Math.PI * 0.7}
           target={[0, -0.1, 0]}
         />
         <GlbHumanoid

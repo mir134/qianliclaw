@@ -36,9 +36,9 @@ export function BodyPart({
   const [hovered, setHovered] = useState(false);
 
   const color = isSelected ? '#5eead4' : hovered ? '#94a3b8' : '#64748b';
-  const emissive = isSelected ? '#0f766e' : hovered ? '#334155' : '#1e293b';
-  const roughness = 0.35;
-  const metalness = isSelected ? 0.25 : 0.1;
+  const emissive = isSelected ? '#14b8a6' : hovered ? '#475569' : '#1e293b';
+  const roughness = 0.25;
+  const metalness = isSelected ? 0.35 : 0.15;
 
   const handleClick = (e: { stopPropagation: () => void }) => {
     e.stopPropagation();
@@ -60,9 +60,9 @@ export function BodyPart({
         }}
         scale={scale}
       >
-        {geometry === 'sphere' && <sphereGeometry args={[0.5, 16, 16]} />}
+        {geometry === 'sphere' && <sphereGeometry args={[0.5, 32, 32]} />}
         {geometry === 'capsule' && (
-          <capsuleGeometry args={[0.35, capsuleHeight, 8, 16]} />
+          <capsuleGeometry args={[0.35, capsuleHeight, 16, 32]} />
         )}
         {geometry === 'box' && <boxGeometry args={[0.6, 0.25, 0.3]} />}
         {invisible ? (
@@ -76,7 +76,7 @@ export function BodyPart({
           <meshStandardMaterial
             color={color}
             emissive={emissive}
-            emissiveIntensity={isSelected ? 0.25 : 0.08}
+            emissiveIntensity={isSelected ? 0.35 : 0.12}
             roughness={roughness}
             metalness={metalness}
           />

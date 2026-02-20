@@ -21,20 +21,12 @@ export const HUMANOID_MODEL_PRESETS: HumanoidModelPreset[] = [
     type: 'primitive',
   },
   {
-    id: 'cesium-man',
-    label: 'Cesium Man',
+    id: 'robot-expressive',
+    label: 'Robot Expressive',
     type: 'glb',
-    url: 'https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models@2.0.0/2.0/CesiumMan/glTF-Binary/CesiumMan.glb',
-    scale: 1.2,
-    positionY: -0.5,
-  },
-  {
-    id: 'rigged-figure',
-    label: 'Rigged Simple',
-    type: 'glb',
-    url: 'https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models@2.0.0/2.0/RiggedSimple/glTF-Binary/RiggedSimple.glb',
-    scale: 0.8,
-    positionY: -0.3,
+    url: 'https://threejs.org/examples/models/gltf/RobotExpressive/RobotExpressive.glb',
+    scale: 1.0,
+    positionY: -0.8,
   },
   {
     id: 'custom',
@@ -47,4 +39,4 @@ export const HUMANOID_MODEL_PRESETS: HumanoidModelPreset[] = [
 ];
 
 /** 默认选中预设 id */
-export const DEFAULT_HUMANOID_PRESET_ID = 'primitive';
+export const DEFAULT_HUMANOID_PRESET_ID = 'robot-expressive';
