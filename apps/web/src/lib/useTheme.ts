@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 
 type Theme = 'light' | 'dark' | 'system';
+
+const eventTarget = new EventTarget();
 
 export function useTheme() {
   const [theme, setThemeState] = useState<Theme>(() => {
@@ -8,7 +10,7 @@ export function useTheme() {
     return (saved as Theme) || 'system';
   });
 
-  const applyTheme = (newTheme: Theme) => {
+  const applyTheme = useCallback((newTheme: Theme) => {
     const isDark =
       newTheme === 'dark' ||
       (newTheme === 'system' &&
@@ -19,7 +21,7 @@ export function useTheme() {
     } else {
       document.documentElement.classList.remove('dark');
     }
-  };
+  }, []);
 
   useEffect(() => {
     const handleSystemThemeChange = () => {
@@ -36,12 +38,36 @@ export function useTheme() {
     return () => {
       darkModeQuery.removeEventListener('change', handleSystemThemeChange);
     };
-  }, [theme]);
+  }, [theme, applyTheme]);
 
-  const setTheme = (newTheme: Theme) => {
-    setThemeState(newTheme);
-    localStorage.setItem('theme', newTheme);
-  };
+  const setTheme = useCallback(
+    (newTheme: Theme) => {
+      setThemeState(newTheme);
+      localStorage.setItem('theme', newTheme);
+      applyTheme(newTheme);
+
+      eventTarget.dispatchEvent(
+        new CustomEvent('themechange', {
+          detail: newTheme,
+        })
+      );
+    },
+    [applyTheme]
+  );
+
+  useEffect(() => {
+    const handler = ((e: CustomEvent) => {
+      if (e.detail !== theme) {
+        setThemeState(e.detail);
+      }
+    }) as EventListener;
+
+    eventTarget.addEventListener('themechange', handler);
+
+    return () => {
+      eventTarget.removeEventListener('themechange', handler);
+    };
+  }, [theme]);
 
   return { theme, setTheme };
 }

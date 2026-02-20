@@ -1,7 +1,40 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { api } from '@/api/client';
 import { cn } from '@/lib/utils';
 import { ConfigOctopus3D } from '@/components/ConfigOctopus3D';
+import { JsonEditor, githubLightTheme, githubDarkTheme } from 'json-edit-react';
+import { useTheme } from '@/lib/useTheme';
+
+const themeMap = {
+  dark: {
+    ...githubDarkTheme,
+    styles: {
+      ...githubDarkTheme.styles,
+      input: {
+        color: '#e5e7eb',
+        backgroundColor: '#374151',
+      },
+      inputHighlight: {
+        color: '#e5e7eb',
+        backgroundColor: '#4b5563',
+      },
+    },
+  },
+  light: {
+    ...githubLightTheme,
+    styles: {
+      ...githubLightTheme.styles,
+      input: {
+        color: '#1f2937',
+        backgroundColor: '#e5e7eb',
+      },
+      inputHighlight: {
+        color: '#1f2937',
+        backgroundColor: '#d1d5db',
+      },
+    },
+  },
+} as const;
 
 const CONFIG_KEYS = [
   { id: 'gateway', label: '网关' },
@@ -292,6 +325,7 @@ const CONFIG_DOCS: Record<
 };
 
 export function ConfigPage() {
+  const { theme } = useTheme();
   const [activeConfigKey, setActiveConfigKey] =
     useState<ConfigKeyId>('gateway');
   const [config, setConfig] = useState<Config | null>(null);
@@ -301,8 +335,17 @@ export function ConfigPage() {
   const [saveStatus, setSaveStatus] = useState<
     'idle' | 'saving' | 'ok' | 'err'
   >('idle');
-  const [editingText, setEditingText] = useState('');
   const [parseError, setParseError] = useState<string | null>(null);
+  const [jsonData, setJsonData] = useState<Record<string, unknown>>({});
+  const [searchText, setSearchText] = useState('');
+
+  const themeName = useMemo(() => {
+    const dark =
+      theme === 'dark' ||
+      (theme === 'system' &&
+        window.matchMedia('(prefers-color-scheme: dark)').matches);
+    return dark ? 'dark' : 'light';
+  }, [theme]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -330,14 +373,10 @@ export function ConfigPage() {
 
   useEffect(() => {
     if (config) {
-      if (activeConfigKey === 'raw') {
-        setEditingText(JSON.stringify(config, null, 2));
-      } else {
-        const section = config[activeConfigKey];
-        setEditingText(
-          JSON.stringify(section !== undefined ? section : {}, null, 2)
-        );
-      }
+      const section =
+        activeConfigKey === 'raw' ? config : config[activeConfigKey];
+      const data = section !== undefined ? section : {};
+      setJsonData(data as Record<string, unknown>);
       setParseError(null);
     }
   }, [config, activeConfigKey]);
@@ -345,30 +384,12 @@ export function ConfigPage() {
   const save = useCallback(async () => {
     if (!config) return;
 
-    try {
-      const parsed = JSON.parse(editingText);
-      if (activeConfigKey === 'raw') {
-        if (typeof parsed !== 'object' || Array.isArray(parsed)) {
-          setParseError('配置必须为 JSON 对象');
-          return;
-        }
-        setConfig(parsed);
-      } else {
-        const next = { ...config, [activeConfigKey]: parsed };
-        setConfig(next);
-      }
-      setParseError(null);
-    } catch (e) {
-      setParseError(e instanceof Error ? e.message : 'JSON 解析失败');
-      return;
-    }
-
     setSaveStatus('saving');
     try {
       const configToSave =
         activeConfigKey === 'raw'
-          ? JSON.parse(editingText)
-          : { ...config, [activeConfigKey]: JSON.parse(editingText) };
+          ? jsonData
+          : { ...config, [activeConfigKey]: jsonData };
       await api.config.put(configToSave);
       setSaveStatus('ok');
       setTimeout(() => setSaveStatus('idle'), 2000);
@@ -376,7 +397,7 @@ export function ConfigPage() {
       setSaveStatus('err');
       setTimeout(() => setSaveStatus('idle'), 3000);
     }
-  }, [config, editingText, activeConfigKey]);
+  }, [config, jsonData, activeConfigKey]);
 
   const handlePartClick = useCallback((configKey: string) => {
     if (CONFIG_KEYS.some((k) => k.id === configKey)) {
@@ -439,13 +460,20 @@ export function ConfigPage() {
         </div>
         <div className="min-w-0 flex-1 grid lg:grid-cols-2 gap-4">
           <div className="rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 p-2 shadow-sm">
-            <div className="mb-2 flex items-center justify-between">
+            <div className="mb-2 flex items-center justify-between gap-2">
               <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
                 {activeConfigKey === 'raw' ? '完整配置' : currentLabel} JSON
               </span>
+              <input
+                type="text"
+                placeholder="搜索字段或值..."
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                className="rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900 px-2 py-1 text-sm text-neutral-700 dark:text-neutral-300 placeholder:text-neutral-400 dark:placeholder:text-neutral-500"
+              />
               <button
                 type="button"
-                className="rounded bg-neutral-800 dark:bg-neutral-600 px-3 py-1.5 text-sm text-white hover:bg-neutral-700 dark:hover:bg-neutral-500"
+                className="rounded bg-neutral-800 dark:bg-neutral-600 px-3 py-1.5 text-sm text-white hover:bg-neutral-700 dark:hover:bg-neutral-500 shrink-0"
                 onClick={save}
               >
                 保存
@@ -456,15 +484,21 @@ export function ConfigPage() {
                 {parseError}
               </p>
             )}
-            <textarea
-              className="w-full h-[400px] resize-none rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900 p-2 font-mono text-sm dark:text-neutral-100"
-              value={editingText}
-              onChange={(e) => {
-                setEditingText(e.target.value);
-                setParseError(null);
-              }}
-              spellCheck={false}
-            />
+            <div className="h-[400px] overflow-auto">
+              {theme}
+              <JsonEditor
+                data={jsonData}
+                onUpdate={({ newData }) => {
+                  setJsonData(newData as Record<string, unknown>);
+                  setParseError(null);
+                }}
+                theme={themeMap[themeName] as any}
+                searchText={searchText}
+                searchFilter="all"
+                className="w-full"
+                maxWidth="100%"
+              />
+            </div>
           </div>
           <div className="rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/50 p-3 shadow-sm flex flex-col h-[476px]">
             <h3 className="mb-2 text-sm font-semibold text-neutral-700 dark:text-neutral-300">
