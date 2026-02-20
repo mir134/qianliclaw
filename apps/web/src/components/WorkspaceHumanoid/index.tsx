@@ -80,26 +80,29 @@ function HumanoidScene({
         enablePan={false}
         minPolarAngle={0.3}
         maxPolarAngle={Math.PI * 0.6}
+        target={[0, 0.4, 0]}
       />
       <group position={[0, 0, 0]} scale={1}>
-        {partConfig.map(({ name, position, scale = 1, geometry, capsuleHeight }) => {
-          const fileName = BODY_PART_TO_FILE[name];
-          return (
-            <BodyPart
-              key={name}
-              name={name}
-              fileName={fileName}
-              label={FILE_LABELS[fileName] ?? fileName}
-              onClick={onPartClick}
-              isSelected={selectedFile === fileName}
-              exists={fileExists(fileName)}
-              position={position}
-              scale={scale}
-              geometry={geometry}
-              capsuleHeight={capsuleHeight}
-            />
-          );
-        })}
+        {partConfig.map(
+          ({ name, position, scale = 1, geometry, capsuleHeight }) => {
+            const fileName = BODY_PART_TO_FILE[name];
+            return (
+              <BodyPart
+                key={name}
+                name={name}
+                fileName={fileName}
+                label={FILE_LABELS[fileName] ?? fileName}
+                onClick={onPartClick}
+                isSelected={selectedFile === fileName}
+                exists={fileExists(fileName)}
+                position={position}
+                scale={scale}
+                geometry={geometry}
+                capsuleHeight={capsuleHeight}
+              />
+            );
+          }
+        )}
       </group>
     </>
   );
@@ -118,7 +121,7 @@ function SceneContent({
     preset?.type === 'glb'
       ? preset.id === 'custom'
         ? customUrl
-        : preset.url ?? ''
+        : (preset.url ?? '')
       : '';
 
   if (isPrimitive) {
@@ -135,6 +138,7 @@ function SceneContent({
           enablePan={false}
           minPolarAngle={0.3}
           maxPolarAngle={Math.PI * 0.6}
+          target={[0, -0.1, 0]}
         />
         <GlbHumanoid
           url={glbUrl}
@@ -199,14 +203,12 @@ export function WorkspaceHumanoid(props: WorkspaceHumanoidProps) {
       </div>
       <div className="flex-1 min-h-0">
         <Canvas
-          camera={{ position: [0, 0.8, 2.5], fov: 45 }}
+          className="h-full w-full"
+          style={{ width: '100%', height: '100%' }}
+          camera={{ position: [0, 0.6, 3.2], fov: 50 }}
           gl={{ antialias: true }}
         >
-          <SceneContent
-            {...props}
-            preset={preset}
-            customUrl={customUrl}
-          />
+          <SceneContent {...props} preset={preset} customUrl={customUrl} />
         </Canvas>
       </div>
     </div>

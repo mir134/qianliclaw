@@ -101,6 +101,7 @@ function OctopusScene({
         enablePan={false}
         minPolarAngle={0.2}
         maxPolarAngle={Math.PI * 0.7}
+        target={[0, -0.2, 0]}
       />
       <group position={[0, 0, 0]} scale={1}>
         {partConfig.map(
@@ -144,6 +145,8 @@ export function ConfigOctopus3D(props: ConfigOctopus3DProps) {
       </div>
       <div className="flex-1 min-h-0">
         <Canvas
+          className="h-full w-full"
+          style={{ width: '100%', height: '100%' }}
           camera={{ position: [0, 0.8, 2.8], fov: 45 }}
           gl={{ antialias: true }}
         >

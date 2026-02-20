@@ -13,10 +13,12 @@ const themeMap = {
       input: {
         color: '#e5e7eb',
         backgroundColor: '#374151',
+        width: '100%',
       },
       inputHighlight: {
         color: '#e5e7eb',
         backgroundColor: '#4b5563',
+        width: '100%',
       },
     },
   },
@@ -27,10 +29,12 @@ const themeMap = {
       input: {
         color: '#1f2937',
         backgroundColor: '#e5e7eb',
+        width: '100%',
       },
       inputHighlight: {
         color: '#1f2937',
         backgroundColor: '#d1d5db',
+        width: '100%',
       },
     },
   },
@@ -486,14 +490,16 @@ export function ConfigPage() {
       </div>
       <div className="flex flex-col gap-6 lg:flex-row">
         <div className="w-full shrink-0 lg:w-[450px] lg:min-w-[450px]">
-          <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/20 dark:border-white/10 h-fit">
-            <h2 className="text-lg font-semibold mb-4 text-neutral-800 dark:text-neutral-200">
+          <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/20 dark:border-white/10 h-[550px] flex flex-col">
+            <h2 className="text-lg font-semibold mb-4 text-neutral-800 dark:text-neutral-200 flex-shrink-0">
               3D 章鱼模型
             </h2>
-            <ConfigOctopus3D
-              onPartClick={handlePartClick}
-              selectedConfigKey={activeConfigKey}
-            />
+            <div className="flex-1 min-h-0">
+              <ConfigOctopus3D
+                onPartClick={handlePartClick}
+                selectedConfigKey={activeConfigKey}
+              />
+            </div>
           </div>
         </div>
         <div className="min-w-0 flex-1 grid lg:grid-cols-2 gap-4">
