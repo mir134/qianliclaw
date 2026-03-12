@@ -1,4 +1,4 @@
-import { Suspense, useRef, useState } from 'react';
+import { Suspense, useRef, useEffect, useState } from 'react';
 import { useGLTF, useAnimations } from '@react-three/drei';
 import * as THREE from 'three';
 import { Html } from '@react-three/drei';
@@ -75,7 +75,7 @@ function Model({
 }: GlbHumanoidProps) {
   const groupRef = useRef<THREE.Group>(null);
   const { scene, animations } = useGLTF(url);
-  useAnimations(animations, groupRef);
+  const { actions } = useAnimations(animations, groupRef);
   const [hoveredBone, setHoveredBone] = useState<string | null>(null);
 
   const fileExists = (fileName: string) =>
@@ -84,6 +84,19 @@ function Model({
   const getBodyPartFromBone = (boneName: string): BodyPartName | null => {
     return robotBoneMapping[boneName] || null;
   };
+
+  useEffect(() => {
+    if (actions && Object.keys(actions).length > 0) {
+      const actionNames = Object.keys(actions);
+      const action = actions[actionNames[2]];
+      if (action) {
+        action.reset();
+        action.setLoop(THREE.LoopRepeat, Infinity);
+        action.clampWhenFinished = true;
+        action.play();
+      }
+    }
+  }, [actions]);
 
   const getBoneNameFromMesh = (object: THREE.Object3D): string | null => {
     const mesh = object as THREE.Mesh;
@@ -108,7 +121,6 @@ function Model({
   };
 
   const handleBoneClick = (e: unknown) => {
-    
     const event = e as { stopPropagation: () => void; object: THREE.Object3D };
     event.stopPropagation?.();
     const boneName = getBoneNameFromMesh(event.object);
@@ -123,11 +135,17 @@ function Model({
     }
   };
 
-  const handleBoneHover = (e: unknown, isHovering: boolean) => {
-    const event = e as { stopPropagation: () => void; object: THREE.Object3D };
+  const handleBoneHover = (e: any) => {
+    const event = e;
     event.stopPropagation?.();
     const boneName = getBoneNameFromMesh(event.object);
-    setHoveredBone(isHovering && boneName ? boneName : null);
+    setHoveredBone(boneName ? boneName : null);
+  };
+
+  const handleBoneOut = (e: any) => {
+    const event = e;
+    event.stopPropagation?.();
+    setHoveredBone(null);
   };
 
   return (
@@ -135,8 +153,8 @@ function Model({
       <primitive
         object={scene.clone()}
         onClick={handleBoneClick}
-        onPointerOver={(e: unknown) => handleBoneHover(e, true)}
-        onPointerOut={(e: unknown) => handleBoneHover(e, false)}
+        onPointerOver={handleBoneHover}
+        onPointerOut={handleBoneOut}
       />
       {hoveredBone && (
         <group>
